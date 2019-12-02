@@ -1,0 +1,19 @@
+PROGRAM
+PROC foo
+ARG odd bool
+BLOCK
+IF
+VAR odd
+THEN
+CALL writeln
+STR "Odd"
+/CALL
+/THEN
+ELSE
+CALL writeln
+STR "Even"
+/CALL
+/ELSE
+/BLOCK
+/PROC
+/PROGRAM

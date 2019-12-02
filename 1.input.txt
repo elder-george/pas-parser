@@ -1,0 +1,10 @@
+{ Answer to the main question }
+proc answer(count: int)
+begin
+  { main loop }
+  for i := 1 to 25 do begin
+    n := 42;
+    writeln("Answer is", n)
+  end
+end
+

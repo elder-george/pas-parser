@@ -1,0 +1,7 @@
+OP +
+STR "Answer is"
+CALL format
+STR " %d"
+NUM 42
+/CALL
+/OP +

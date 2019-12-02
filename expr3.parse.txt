@@ -1,0 +1,13 @@
+OP +
+NUM 0
+OP /
+OP *
+OP +
+NUM 1
+NUM 2
+/OP +
+NUM 3
+/OP *
+NUM 4
+/OP /
+/OP +

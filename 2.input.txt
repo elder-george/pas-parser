@@ -1,0 +1,10 @@
+proc foo(odd : bool) begin
+    if odd then 
+        begin
+            writeln("Odd")
+        end
+    else
+        begin
+            writeln("Even")
+        end
+end

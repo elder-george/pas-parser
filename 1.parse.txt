@@ -1,0 +1,20 @@
+PROGRAM
+PROC answer
+ARG count int
+BLOCK
+FOR i
+NUM 1
+NUM 25
+BLOCK
+ASSIGN n
+NUM 42
+/ASSIGN
+CALL writeln
+STR "Answer is"
+VAR n
+/CALL
+/BLOCK
+/FOR
+/BLOCK
+/PROC
+/PROGRAM
