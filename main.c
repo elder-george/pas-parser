@@ -30,7 +30,7 @@ const char* const NAME##_Names[NAME##_Count] = {\
     val("Operator/Delim", ttOperatorOrDelim, "%255[-+*/=<>:,;]%n")\
     val("Operator",     ttOper,       NULL)\
     val("Delim",        ttDelim,      NULL)\
-    val("Bracket",      ttBracket,    "%1[()]%n")
+    val("Bracket",      ttBracket,    "%1[][()]%n")
 
 DEF_ENUM(TokenTypes, TOKEN_TYPES);
 
@@ -77,6 +77,8 @@ DEF_ENUM(Delimiter, DELIMS);
 #define BRACKETS(val)\
     val("(", LeftPar)\
     val(")", RightPar)\
+    val("[", LeftBr)\
+    val("]", RightBr)\
 
 DEF_ENUM(Bracket, BRACKETS);
 
@@ -367,8 +369,10 @@ FWD_STRUCT(Stmt);
 FWD_STRUCT(Assignment);
 FWD_STRUCT(Expr);
 FWD_STRUCT(Call);
+FWD_STRUCT(Index);
 FWD_STRUCT(Conditional);
 FWD_STRUCT(ForLoop);
+#undef FWD_STRUCT
 
 // had to define `Call` first, otherwise cross-dependency don't work;
 // even here, it works mostly because of type-erasing vector.
@@ -384,15 +388,16 @@ struct Expr{
         exprVar,
         exprCall,
         exprBinary,
+        exprIndex,
     } type; 
     union{
         int num;
         char *str;
         Call call;
         struct {
-            Operator op;
             Expr *lhs;
             Expr *rhs;
+            Operator op;
         };
     };
 };
@@ -840,7 +845,10 @@ bool build_expr_atom(Lexer *lexer, Expr *expr){
     // TODO: negation
     // TODO: function calls
     Token token;
-    if (!get_token(lexer, &token)) return false;
+    if (!get_token(lexer, &token)) {
+        fprintf(stderr, "Out of input at (%d:%d)", token.line_no, token.col);
+        return false;
+    }
     if (token.type == ttBracket && token.br == LeftPar) {
         if (!build_expr_ast(lexer, expr)) return false;
         if (!get_token(lexer, &token)) return false;
@@ -864,7 +872,8 @@ bool build_expr_atom(Lexer *lexer, Expr *expr){
         expr->type = exprVar;
         expr->str = token.str;
         token.str == NULL;
-        if (get_token(lexer, &token) && token.type == ttBracket && token.br == LeftPar) {
+        if (get_token(lexer, &token)) {
+            if (token.type == ttBracket && token.br == LeftPar) {
             Call call = { .procName = expr->str, {sizeof(Expr)} };
             if (!build_param_list_ast(lexer, &call.params)) {
                 fprintf(stderr, "Invalid call");
@@ -872,8 +881,25 @@ bool build_expr_atom(Lexer *lexer, Expr *expr){
             }
             expr->type = exprCall;
             expr->call = call;
+            } else if (token.type == ttBracket && token.br == LeftBr) {
+                Expr indexExpr;
+                if (!build_expr_ast(lexer, &indexExpr)){
+                    fprintf(stderr, "Invalid array index");
+                    return false;
+                }
+                Expr newAtom = { .type = exprIndex, .lhs = malloc(sizeof(Expr)), .rhs = malloc(sizeof(Expr))};
+                *newAtom.lhs = *expr;
+                *newAtom.rhs = indexExpr;
+                *expr = newAtom;
+                if (! (get_token(lexer, &token) && token.type == ttBracket && token.br == RightBr)) {
+                    BAD_TOKEN("]", token);
+                    return false;
+                }
+                // fprintf(stderr, "!!!BUILT INDEXER!!!\n");
+                // return true;
         } else {
             unget_token(lexer, &token);
+        }
         }
         return true;
     }
@@ -888,7 +914,10 @@ bool build_expr_1(Lexer *lexer, Expr* p_lhs, int min_prec, /*out*/ Expr *expr) {
     while (token.type == ttOper && OpPrecedence[token.op] >= min_prec) {
         Operator op = token.op;
         Expr rhs;
-        if (!build_expr_atom(lexer, &rhs)) return false;
+        if (!build_expr_atom(lexer, &rhs)) {
+            fprintf(stderr, "Failed to parse the RHS at (%d:%d)\n", token.line_no, token.col);
+            return false;
+        }
         while(get_token(lexer, &token) && token.type == ttOper && OpPrecedence[token.op] > OpPrecedence[op]){
             unget_token(lexer, &token);
             Expr new_rhs;
@@ -908,8 +937,13 @@ bool build_expr_1(Lexer *lexer, Expr* p_lhs, int min_prec, /*out*/ Expr *expr) {
 
 bool build_expr_ast(Lexer *lexer, Expr *expr){
     Expr lhs;
-    return build_expr_atom(lexer, &lhs) 
-        && build_expr_1(lexer, &lhs, 0, expr);
+    if (build_expr_atom(lexer, &lhs)){
+        if (!build_expr_1(lexer, &lhs, 0, expr)) {
+            *expr = lhs;
+        }
+        return true;
+    }
+    return false;
 }
 
 bool build_param_list_ast(Lexer *lexer, vec* params){
@@ -973,10 +1007,12 @@ struct Visitor{
 int main(){
     verify_lex_parse("1.input.txt", "1.lex.txt", "1.parse.txt");
     verify_lex_parse("2.input.txt", "2.lex.txt", "2.parse.txt");
+    // verify_lex_parse("3.input.txt", "3.lex.txt", "3.parse.txt");
     printf("----------------------\n");
     verify_expr("expr1.input.txt", "expr1.parse.txt");
     verify_expr("expr2.input.txt", "expr2.parse.txt");
     verify_expr("expr3.input.txt", "expr3.parse.txt");
     verify_expr("expr4.input.txt", "expr4.parse.txt");
+    verify_expr("expr5.input.txt", "expr5.parse.txt");
     printf("----------------------\n");
 }

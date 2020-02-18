@@ -1,0 +1,4 @@
+proc use_array()
+begin
+    mem[655360] := 42;
+end
