@@ -908,8 +908,13 @@ bool build_expr_1(Lexer *lexer, Expr* p_lhs, int min_prec, /*out*/ Expr *expr) {
 
 bool build_expr_ast(Lexer *lexer, Expr *expr){
     Expr lhs;
-    return build_expr_atom(lexer, &lhs) 
-        && build_expr_1(lexer, &lhs, 0, expr);
+    if (build_expr_atom(lexer, &lhs)){
+        if (!build_expr_1(lexer, &lhs, 0, expr)){
+            *expr = lhs;
+        }
+        return true;
+    }
+    return false;
 }
 
 bool build_param_list_ast(Lexer *lexer, vec* params){
@@ -974,6 +979,7 @@ int main(){
     verify_lex_parse("1.input.txt", "1.lex.txt", "1.parse.txt");
     verify_lex_parse("2.input.txt", "2.lex.txt", "2.parse.txt");
     printf("----------------------\n");
+    verify_expr("expr0.input.txt", "expr0.parse.txt");
     verify_expr("expr1.input.txt", "expr1.parse.txt");
     verify_expr("expr2.input.txt", "expr2.parse.txt");
     verify_expr("expr3.input.txt", "expr3.parse.txt");
