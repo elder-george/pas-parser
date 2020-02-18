@@ -1,0 +1,3 @@
+proc draw_pixel() begin
+    mem[655360] := 42;
+end

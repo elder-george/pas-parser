@@ -30,7 +30,7 @@ const char* const NAME##_Names[NAME##_Count] = {\
     val("Operator/Delim", ttOperatorOrDelim, "%255[-+*/=<>:,;]%n")\
     val("Operator",     ttOper,       NULL)\
     val("Delim",        ttDelim,      NULL)\
-    val("Bracket",      ttBracket,    "%1[()]%n")
+    val("Bracket",      ttBracket,    "%1[][()]%n")
 
 DEF_ENUM(TokenTypes, TOKEN_TYPES);
 
@@ -77,6 +77,8 @@ DEF_ENUM(Delimiter, DELIMS);
 #define BRACKETS(val)\
     val("(", LeftPar)\
     val(")", RightPar)\
+    val("[", RightBrace)\
+    val("]", RightBrace)
 
 DEF_ENUM(Bracket, BRACKETS);
 
@@ -978,6 +980,7 @@ struct Visitor{
 int main(){
     verify_lex_parse("1.input.txt", "1.lex.txt", "1.parse.txt");
     verify_lex_parse("2.input.txt", "2.lex.txt", "2.parse.txt");
+    verify_lex_parse("3.input.txt", "3.lex.txt", NULL);
     printf("----------------------\n");
     verify_expr("expr0.input.txt", "expr0.parse.txt");
     verify_expr("expr1.input.txt", "expr1.parse.txt");
