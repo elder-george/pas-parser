@@ -176,42 +176,46 @@ void verify_lex_parse(const char *src, const char *lex, const char *parse){
     printf("%s\n", __FUNCTION__);
     char *src_text = read_all_text(src);
 
-    char *lex_out = mk_output_name(lex);
-    FILE* f_lex = open_output_file(lex_out);
-    assert(f_lex && "Can't open file for lexer output");
-    print_tokens(f_lex, src_text);
-    fclose(f_lex);
-    diff_files(lex, lex_out);
-    free(lex_out);
+    if (lex){
+        char *lex_out = mk_output_name(lex);
+        FILE* f_lex = open_output_file(lex_out);
+        assert(f_lex && "Can't open file for lexer output");
+        print_tokens(f_lex, src_text);
+        fclose(f_lex);
+        diff_files(lex, lex_out);
+        free(lex_out);
+    }
 
-    Lexer lexer;
-    init_lexer(&lexer, src_text);
-    Program program = { {sizeof(Proc)} };
-    assert(build_program_ast(&lexer, &program) && "Failed to parse program");
+    if (parse){
+        Lexer lexer;
+        init_lexer(&lexer, src_text);
+        Program program = { {sizeof(Proc)} };
+        assert(build_program_ast(&lexer, &program) && "Failed to parse program");
 
-    char *parse_out = mk_output_name(parse);
-    FILE *f_parse = open_output_file(parse_out);
-    assert(f_parse && "Can't open file for parser output");
-    PrintVisitor vis = {
-        {
-            .visit_Program = print_program, 
-            .visit_Proc = print_proc,
-            .visit_Arg = print_arg,
-            .visit_Stmt = print_stmt,
-            .visit_ForLoop = print_forloop,
-            .visit_Assignment = print_assignment,
-            .visit_Call = print_call,
-            .visit_Conditional = print_cond,
-            .visit_Expr = print_expr,
-        },
-        f_parse
-    };
-    vis.v.visit_Program(&vis.v, &program);
-    fclose(f_parse);
-    diff_files(parse, parse_out);
-    free(parse_out);
-    Program_free(&program);
-    free(src_text);
+        char *parse_out = mk_output_name(parse);
+        FILE *f_parse = open_output_file(parse_out);
+        assert(f_parse && "Can't open file for parser output");
+        PrintVisitor vis = {
+            {
+                .visit_Program = print_program, 
+                .visit_Proc = print_proc,
+                .visit_Arg = print_arg,
+                .visit_Stmt = print_stmt,
+                .visit_ForLoop = print_forloop,
+                .visit_Assignment = print_assignment,
+                .visit_Call = print_call,
+                .visit_Conditional = print_cond,
+                .visit_Expr = print_expr,
+            },
+            f_parse
+        };
+        vis.v.visit_Program(&vis.v, &program);
+        fclose(f_parse);
+        diff_files(parse, parse_out);
+        free(parse_out);
+        Program_free(&program);
+        free(src_text);
+    }
 }
 
 void verify_expr(const char *src, const char *parse){
